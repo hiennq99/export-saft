@@ -2,7 +2,7 @@
 import { http, HttpResponse } from 'msw';
 
 export const handlers = [
-  http.post('/export-saft', async () => {
+  http.get('/export-saft', async () => {
     const responseStatus = [202, 422, 500][Math.floor(Math.random() * 3)];
     await new Promise((resolve) => setTimeout(resolve, 1500));
 

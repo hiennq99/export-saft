@@ -90,6 +90,17 @@ function App() {
 
   const onSubmit = async (payload: ExportSaftSchema) => {
     try {
+      if (payload.period === ExportSaftPeriod.WEEK) {
+        payload.day = '';
+      }
+      if (payload.period === ExportSaftPeriod.DAY) {
+        payload.week = '';
+      }
+      if (payload.period === ExportSaftPeriod.MONTH) {
+        payload.day = '';
+        payload.week = '';
+      }
+
       const data = await exportSaft(payload);
       const message = _.get(data, 'message', '');
       const [html, text] = message.split(':');
