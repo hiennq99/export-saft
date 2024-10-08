@@ -113,7 +113,10 @@ function App() {
         message={message}
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-6 md:space-y-10"
+        >
           <div className="space-y-1">
             <h1 className="text-[32px] font-normal text-gray-600">
               Export SAFT
@@ -132,7 +135,7 @@ function App() {
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={type}
-                    className="flex flex-row space-x-2"
+                    className="flex flex-col md:flex-row flex-wrap md:space-x-2"
                   >
                     {EXPORT_SAFT_TYPE_OPTIONS.map((option) => (
                       <FormItem
@@ -166,7 +169,7 @@ function App() {
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={period}
-                    className="flex flex-row space-x-2"
+                    className="flex flex-col md:flex-row flex-wrap md:space-x-2"
                   >
                     {periodOptions.map((option) => (
                       <FormItem
@@ -341,14 +344,18 @@ function App() {
               )}
             />
           </div>
-          <div className="flex justify-end gap-4 pt-8">
-            <div>
+          <div className="flex flex-col md:flex-row justify-end gap-8 md:pt-8">
+            <div className="flex flex-col">
               <h6 className="text-primary underline cursor-pointer text-sm">
                 Download the last generated SAF-T file
               </h6>
               <p className="text-xs text-label">{EXPORT_SAFT_VERSION[type]}</p>
             </div>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={form.formState.isSubmitting}
+            >
               {form.formState.isSubmitting ? (
                 <span className="flex items-center">
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />{' '}
