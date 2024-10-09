@@ -20,9 +20,11 @@ export function getDaysInMonth(year: number, month: number) {
 
 export function getWeekRanges(year: number, month: number) {
   const result = [];
-  let date = dayjs(new Date(year, month, 1));
+
+  let date = dayjs(new Date(year, month, 1)).clone();
 
   if (date.day() !== 1) {
+    result.push([date.date()]);
     date = date.subtract(date.day() - 1, 'day');
   }
 
@@ -34,9 +36,13 @@ export function getWeekRanges(year: number, month: number) {
         week.push(currentDay.date());
       }
     }
-    result.push(week);
+    if (week.length > 0) {
+      result.push(week);
+    }
     date = date.add(7, 'day');
   }
+
+  console.log('🚀 ~ getWeekRanges ~ result:', result);
 
   return result;
 }

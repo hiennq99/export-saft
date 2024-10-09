@@ -25,12 +25,16 @@ export const WeekField = () => {
   const year = watch('year');
   const month = watch('month');
 
+  const monthName = dayjs(
+    new Date(parseInt(year), parseInt(month, 10) - 1)
+  ).format('MMMM');
+
   const showWeek =
     period === ExportSaftPeriod.WEEK && type === ExportSaftType.ALL;
 
   const weeksInMonth = useMemo(() => {
     if (!month) return [];
-    return getWeekRanges(parseInt(year), parseInt(month, 10));
+    return getWeekRanges(parseInt(year), parseInt(month, 10) - 1);
   }, [year, month, period]);
 
   return (
@@ -55,11 +59,10 @@ export const WeekField = () => {
                 {weeksInMonth.map((week) => {
                   return (
                     <SelectItem key={week[0]} value={week[0].toString()}>
-                      {week[0]} to {week[week.length - 1]} of{' '}
-                      {month &&
-                        dayjs()
-                          .month(parseInt(month) - 1)
-                          .format('MMMM')}
+                      {week.length === 1
+                        ? week[0]
+                        : `${week[0]} to ${week[week.length - 1]}`}{' '}
+                      of {month && `${monthName}`}
                     </SelectItem>
                   );
                 })}
