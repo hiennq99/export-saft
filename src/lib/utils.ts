@@ -1,6 +1,9 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -20,12 +23,12 @@ export function getDaysInMonth(year: number, month: number) {
 
 export function getWeekRanges(year: number, month: number) {
   const result = [];
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInMonth = dayjs.utc().year(year).month(month).daysInMonth();
   let week = [];
 
   for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const dayOfWeek = date.getDay();
+    const date = dayjs.utc().year(year).month(month).date(day);
+    const dayOfWeek = date.day();
 
     if (dayOfWeek === 1 && week.length) {
       result.push(week);
