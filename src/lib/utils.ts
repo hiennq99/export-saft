@@ -20,28 +20,25 @@ export function getDaysInMonth(year: number, month: number) {
 
 export function getWeekRanges(year: number, month: number) {
   const result = [];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let week = [];
 
-  let date = dayjs(new Date(year, month, 1)).clone();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const dayOfWeek = date.getDay();
 
-  if (date.day() !== 1) {
-    date = date.subtract(date.day() - 1, 'day');
-  }
-
-  while (date.month() === month || date.month() === month - 1) {
-    const week = [];
-    for (let i = 0; i < 7; i++) {
-      const currentDay = date.add(i, 'day');
-      if (currentDay.month() === month) {
-        week.push(currentDay.date());
-      }
-    }
-    if (week.length > 0) {
+    if (dayOfWeek === 1 && week.length) {
       result.push(week);
+      week = [];
     }
-    date = date.add(7, 'day');
-  }
 
-  console.log('🚀 ~ getWeekRanges ~ result:', result);
+    week.push(day);
+
+    if (dayOfWeek === 0 || day === daysInMonth) {
+      result.push(week);
+      week = [];
+    }
+  }
 
   return result;
 }
