@@ -13,7 +13,8 @@ export function getCurrentYear() {
 export function getDaysInMonth(year: number, month: number) {
   const noDays = dayjs(new Date(year, month, 0)).date();
   return Array.from({ length: noDays }, (_, i) => {
-    return `${year}/${month}/${(i + 1).toString().padStart(2, '0')}`;
+    return i + 1;
+    // return `${year}/${month}/${(i + 1).toString().padStart(2, '0')}`;
   });
 }
 

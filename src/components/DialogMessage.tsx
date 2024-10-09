@@ -1,6 +1,12 @@
 import { DialogClose } from '@radix-ui/react-dialog';
 import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogTitle } from './ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from './ui/dialog';
 
 export interface DialogMessageProps {
   open: boolean;
@@ -16,6 +22,7 @@ export const DialogMessage = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTitle hidden>Export SAF-T</DialogTitle>
+      <DialogDescription />
       <DialogContent className="sm:max-w-[634px] px-[64px] pb-[40px] pt-[64px] relative">
         <div
           className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[111px] aspect-square rounded-full bg-white grid place-items-center"

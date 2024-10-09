@@ -1,7 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
 import dayjs from 'dayjs';
+import _ from 'lodash';
+import { Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { exportSaft } from './api';
+import { DialogMessage } from './components/DialogMessage';
 import { Button } from './components/ui/button';
 import { Checkbox } from './components/ui/checkbox';
 import {
@@ -21,8 +26,6 @@ import {
   SelectValue,
 } from './components/ui/select';
 import {
-  EXPORT_SAFT_PERIOD_ANNUAL,
-  EXPORT_SAFT_PERIOD_MONTHLY,
   EXPORT_SAFT_PERIOD_OPTIONS,
   EXPORT_SAFT_TYPE_OPTIONS,
   EXPORT_SAFT_VERSION,
@@ -31,20 +34,15 @@ import {
   MONTH_OPTIONS,
 } from './lib/constant';
 import { exportSaftSchema, type ExportSaftSchema } from './lib/schema';
-import { getCurrentYear, getDaysInMonth, getWeekRanges } from './lib/utils';
-import { exportSaft } from './api';
-import axios from 'axios';
-import { Loader2 } from 'lucide-react';
-import _ from 'lodash';
-import { DialogMessage } from './components/DialogMessage';
+import { cn, getCurrentYear, getDaysInMonth, getWeekRanges } from './lib/utils';
 
 function App() {
   const [message, setMessage] = useState('');
   const form = useForm<ExportSaftSchema>({
     resolver: zodResolver(exportSaftSchema),
     defaultValues: {
-      type: 'all',
-      period: 'year',
+      type: ExportSaftType.ALL,
+      period: ExportSaftPeriod.YEAR,
       year: getCurrentYear().toString(),
       month: '',
       week: '',
@@ -57,13 +55,6 @@ function App() {
   const period = form.watch('period');
   const year = form.watch('year');
   const month = form.watch('month');
-  const week = form.watch('week');
-  const day = form.watch('day');
-
-  const periodOptions =
-    type === ExportSaftType.ALL
-      ? EXPORT_SAFT_PERIOD_OPTIONS
-      : [EXPORT_SAFT_PERIOD_ANNUAL, EXPORT_SAFT_PERIOD_MONTHLY];
 
   const showMonth = period !== ExportSaftPeriod.YEAR;
   const showWeek =
@@ -91,24 +82,21 @@ function App() {
   const onSubmit = async (payload: ExportSaftSchema) => {
     try {
       if (payload.period === ExportSaftPeriod.WEEK) {
-        payload.day = '';
+        payload.day = payload.week;
       }
-      if (payload.period === ExportSaftPeriod.DAY) {
-        payload.week = '';
-      }
+      delete payload.week;
       if (payload.period === ExportSaftPeriod.MONTH) {
-        payload.day = '';
-        payload.week = '';
+        delete payload.day;
+        delete payload.week;
       }
 
       const data = await exportSaft(payload);
       const message = _.get(data, 'message', '');
-      const [html, text] = message.split(':');
+      const [label, email] = message.split(':');
 
       setMessage(
-        `${html}: <a class="text-primary font-bold" href="mailto:john.doe@gmail.com">${text}</a>`
+        `${label}: <a class="text-primary font-bold" href="mailto:${email}">${email}</a>`
       );
-      form.reset();
     } catch (error) {
       if (axios.isAxiosError(error)) {
         setMessage(_.get(error, 'response.data.errors.[0].error', ''));
@@ -145,7 +133,7 @@ function App() {
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={type}
+                    defaultValue={field.value}
                     className="flex flex-col md:flex-row flex-wrap md:space-x-2"
                   >
                     {EXPORT_SAFT_TYPE_OPTIONS.map((option) => (
@@ -179,22 +167,33 @@ function App() {
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={period}
+                    defaultValue={field.value}
                     className="flex flex-col md:flex-row flex-wrap md:space-x-2"
                   >
-                    {periodOptions.map((option) => (
-                      <FormItem
-                        key={option.value}
-                        className="flex items-center space-x-3 space-y-0"
-                      >
-                        <FormControl>
-                          <RadioGroupItem value={option.value} />
-                        </FormControl>
-                        <FormLabel className="font-normal text-xs">
-                          {option.label}
-                        </FormLabel>
-                      </FormItem>
-                    ))}
+                    {EXPORT_SAFT_PERIOD_OPTIONS.map((option) => {
+                      const isHidden =
+                        type === ExportSaftType.GUIDES &&
+                        [ExportSaftPeriod.WEEK, ExportSaftPeriod.DAY].includes(
+                          option.value
+                        );
+
+                      return (
+                        <FormItem
+                          key={option.value}
+                          className={cn(
+                            'flex items-center space-x-3 space-y-0',
+                            isHidden && 'hidden'
+                          )}
+                        >
+                          <FormControl>
+                            <RadioGroupItem value={option.value} />
+                          </FormControl>
+                          <FormLabel className="font-normal text-xs">
+                            {option.label}
+                          </FormLabel>
+                        </FormItem>
+                      );
+                    })}
                   </RadioGroup>
                 </FormControl>
                 <FormMessage />
@@ -215,7 +214,7 @@ function App() {
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={year}
+                        defaultValue={field.value}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Yearly" />
@@ -231,111 +230,104 @@ function App() {
                   </FormItem>
                 )}
               />
-              {showMonth && (
-                <FormField
-                  control={form.control}
-                  name="month"
-                  render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel className="text-label text-sm font-medium">
-                        What month?
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={month}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Monthly" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {MONTH_OPTIONS.map((option) => (
+              <FormField
+                control={form.control}
+                name="month"
+                render={({ field }) => (
+                  <FormItem className={cn('space-y-1', !showMonth && 'hidden')}>
+                    <FormLabel className="text-label text-sm font-medium">
+                      What month?
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Monthly" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MONTH_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="week"
+                render={({ field }) => (
+                  <FormItem className={cn('space-y-1', !showWeek && 'hidden')}>
+                    <FormLabel className="text-label text-sm font-medium">
+                      What week?
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Weekly" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {weeksInMonth.map((week) => {
+                            return (
                               <SelectItem
-                                key={option.value}
-                                value={option.value}
+                                key={week[0]}
+                                value={week[0].toString()}
                               >
-                                {option.label}
+                                {week[0]} to {week[week.length - 1]} of{' '}
+                                {month &&
+                                  dayjs()
+                                    .month(parseInt(month) - 1)
+                                    .format('MMMM')}
                               </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              {showWeek && (
-                <FormField
-                  control={form.control}
-                  name="week"
-                  render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel className="text-label text-sm font-medium">
-                        What week?
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={week}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Weekly" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {weeksInMonth.map((week) => {
-                              const value = `${year}/${month}/${week[0]}`;
-                              return (
-                                <SelectItem key={value} value={value}>
-                                  {week[0]} to {week[week.length - 1]} of{' '}
-                                  {month &&
-                                    dayjs()
-                                      .month(parseInt(month) - 1)
-                                      .format('MMMM')}
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {showDay && (
-                <FormField
-                  control={form.control}
-                  name="day"
-                  render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel className="text-label text-sm font-medium">
-                        What day?
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={day}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Daily" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {daysInMonth.map((day, index) => (
-                              <SelectItem key={day} value={day}>
-                                {index + 1}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+              <FormField
+                control={form.control}
+                name="day"
+                render={({ field }) => (
+                  <FormItem className={cn('space-y-1', !showDay && 'hidden')}>
+                    <FormLabel className="text-label text-sm font-medium">
+                      What day?
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Daily" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {daysInMonth.map((day, index) => (
+                            <SelectItem key={day} value={day.toString()}>
+                              {index + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
             <FormField
               control={form.control}

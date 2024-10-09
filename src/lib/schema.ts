@@ -3,8 +3,13 @@ import { ExportSaftPeriod, ExportSaftType } from './constant';
 
 export const exportSaftSchema = z
   .object({
-    type: z.enum(['all', 'guides']),
-    period: z.enum(['year', 'month', 'week', 'day']),
+    type: z.enum([ExportSaftType.ALL, ExportSaftType.GUIDES]),
+    period: z.enum([
+      ExportSaftPeriod.YEAR,
+      ExportSaftPeriod.MONTH,
+      ExportSaftPeriod.WEEK,
+      ExportSaftPeriod.DAY,
+    ]),
     year: z.string().min(4),
     month: z.string().optional(),
     week: z.string().optional(),
@@ -14,12 +19,12 @@ export const exportSaftSchema = z
   .superRefine((data, ctx) => {
     if (
       data.type === ExportSaftType.GUIDES &&
-      !['year', 'month'].includes(data.period)
+      ![ExportSaftPeriod.YEAR, ExportSaftPeriod.MONTH].includes(data.period)
     ) {
       ctx.addIssue({
         path: ['period'],
         code: z.ZodIssueCode.custom,
-        message: 'Period must be year or month when type is guides',
+        message: 'Period must be Annual or Monthly when type is guides',
       });
     }
 
