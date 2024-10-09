@@ -24,7 +24,6 @@ export function getWeekRanges(year: number, month: number) {
   let date = dayjs(new Date(year, month, 1)).clone();
 
   if (date.day() !== 1) {
-    result.push([date.date()]);
     date = date.subtract(date.day() - 1, 'day');
   }
 
