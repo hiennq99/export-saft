@@ -23,7 +23,7 @@ export const DialogMessage = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTitle hidden>Export SAF-T</DialogTitle>
       <DialogDescription />
-      <DialogContent className="sm:max-w-[634px] px-[64px] pb-[40px] pt-[64px] relative">
+      <DialogContent className="px-[64px] pt-[64px] pb-[32px] max-w-xl">
         <div
           className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[111px] aspect-square rounded-full bg-white grid place-items-center"
           style={{
